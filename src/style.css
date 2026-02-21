@@ -16,17 +16,17 @@
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
   background: #090b10;
   color: #e6ebf3;
+  overflow: hidden;
 }
 
 #app {
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .layout {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
   grid-template-columns: minmax(300px, 360px) 1fr;
 }
@@ -38,17 +38,12 @@ body {
   padding: 1rem;
   background: #11151d;
   border-right: 1px solid #222a37;
+  overflow-y: auto;
 }
 
 h1 {
   margin: 0;
   font-size: 1.2rem;
-}
-
-.intro {
-  margin: 0;
-  color: #9fa9bb;
-  font-size: 0.86rem;
 }
 
 .field {
@@ -116,46 +111,8 @@ textarea {
 }
 
 .button-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.button-row .button-wide {
-  grid-column: 1 / -1;
-}
-
-.param-controls {
   display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  max-height: 260px;
-  overflow: auto;
-  padding-right: 0.2rem;
-}
-
-.control-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.35rem 0.6rem;
-  align-items: center;
-  padding: 0.4rem 0.45rem;
-  border: 1px solid #232a38;
-  border-radius: 8px;
-  background: #0d121a;
-}
-
-.control-label {
-  font-size: 0.79rem;
-}
-
-.control-value {
-  font-size: 0.72rem;
-  color: #98a4b9;
-}
-
-.control-row input[type="range"] {
-  grid-column: 1 / span 2;
+  gap: 0.5rem;
 }
 
 .status {
@@ -189,38 +146,38 @@ textarea {
   position: relative;
   background: #05070b;
   overflow: hidden;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #shader-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 1;
 }
 
 .shader-overlay-video {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  z-index: 2;
+  height: 85vh;
   width: auto;
-  height: auto;
-  max-width: min(35vw, 360px);
-  max-height: min(80vh, 92%);
   object-fit: contain;
-  aspect-ratio: auto;
   border-radius: 48px;
   border: 1px solid rgba(154, 190, 255, 0.38);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
   pointer-events: none;
-  z-index: 2;
 }
 
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 52vh;
+    grid-template-rows: auto 100vh;
+    height: auto;
   }
 
   .panel {
@@ -229,7 +186,6 @@ textarea {
   }
 
   .shader-overlay-video {
-    max-width: min(52vw, 320px);
-    max-height: min(48vh, 88%);
+    height: 70vh;
   }
 }

@@ -1,10 +1,9 @@
 import "./style.css";
 
-const SHADERS = [
-  {
-    id: "goo-raymarch",
-    name: "Goo Raymarch (first)",
-    source: String.raw`
+const SHADER = {
+  id: "goo-raymarch",
+  name: "Goo Raymarch",
+  source: String.raw`
 #define t (iTime * uTimeScale)
 
 #define MAX_STEPS 128
@@ -172,127 +171,27 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     fragColor = image(fragCoord, uv);
 }
 `,
-    controls: [
-      { id: "time", label: "Time Scale", min: 0.0, max: 3.0, step: 0.01, defaultValue: 0.18, uniform: "uTimeScale", group: "float" },
-      { id: "ambient", label: "Ambient", min: 0.0, max: 1.0, step: 0.01, defaultValue: 0.0, uniform: "uAmbientIntensity", group: "float" },
-      { id: "plane", label: "Plane Wave", min: 0.0, max: 0.5, step: 0.005, defaultValue: 0.27, uniform: "uPlaneWave", group: "float" },
-      { id: "wave-freq", label: "Wave Freq", min: 0.1, max: 4.0, step: 0.01, defaultValue: 3.61, uniform: "uWaveFreq", group: "float" },
-      { id: "plane-tilt", label: "Plane Tilt", min: -0.3, max: 0.3, step: 0.005, defaultValue: -0.3, uniform: "uPlaneTilt", group: "float" },
-      { id: "gooiness", label: "Gooiness", min: 0.1, max: 4.0, step: 0.01, defaultValue: 0.93, uniform: "uGooiness", group: "float" },
-      { id: "blob-size", label: "Blob Size", min: 0.0, max: 5.0, step: 0.01, defaultValue: 0.0, uniform: "uBlobSize", group: "float" },
-      { id: "blob-height", label: "Blob Height", min: 0.0, max: 5.0, step: 0.01, defaultValue: 0.37, uniform: "uBlobHeight", group: "float" },
-      { id: "fresnel", label: "Fresnel Glow", min: 0.0, max: 2.0, step: 0.01, defaultValue: 1.5, uniform: "uFresnel", group: "float" },
-      { id: "camera-x", label: "Camera X", min: -30.0, max: 30.0, step: 0.01, defaultValue: 14.87, uniform: "uCameraPosX", group: "vec3", vector: "uCameraPos", index: 0 },
-      { id: "camera-y", label: "Camera Y", min: -30.0, max: 30.0, step: 0.01, defaultValue: 17.41, uniform: "uCameraPosY", group: "vec3", vector: "uCameraPos", index: 1 },
-      { id: "camera-z", label: "Camera Z", min: -40.0, max: 40.0, step: 0.01, defaultValue: -40.0, uniform: "uCameraPosZ", group: "vec3", vector: "uCameraPos", index: 2 },
-      { id: "view-x", label: "View X", min: -3.0, max: 3.0, step: 0.01, defaultValue: -0.38, uniform: "uViewOffsetX", group: "vec3", vector: "uViewOffset", index: 0 },
-      { id: "view-y", label: "View Y", min: -3.0, max: 3.0, step: 0.01, defaultValue: -2.04, uniform: "uViewOffsetY", group: "vec3", vector: "uViewOffset", index: 1 },
-      { id: "view-z", label: "View Z", min: -3.0, max: 3.0, step: 0.01, defaultValue: -1.66, uniform: "uViewOffsetZ", group: "vec3", vector: "uViewOffset", index: 2 },
-      { id: "r", label: "Color R", min: 0.0, max: 1.0, step: 0.01, defaultValue: 0.77, uniform: "uBaseColorR", group: "vec3", vector: "uBaseColor", index: 0 },
-      { id: "g", label: "Color G", min: 0.0, max: 1.0, step: 0.01, defaultValue: 0.0, uniform: "uBaseColorG", group: "vec3", vector: "uBaseColor", index: 1 },
-      { id: "b", label: "Color B", min: 0.0, max: 1.0, step: 0.01, defaultValue: 0.98, uniform: "uBaseColorB", group: "vec3", vector: "uBaseColor", index: 2 },
-    ],
-  },
-  {
-    id: "turbulence-sphere",
-    name: "Turbulence Sphere (second)",
-    source: String.raw`
-void mainImage(out vec4 O, vec2 I) {
-    vec3 p;
-    vec3 r = normalize(vec3(I + I, 0.0) - iResolution.xyy);
-    vec3 a = normalize(tan((iTime * uTimeScale) * 0.2 + vec3(0.0, 2.0, 5.0)));
-    float t = 0.0;
-    float v = 0.0;
-
-    O = vec4(0.0);
-    for (int step = 0; step < 60; step++) {
-        float fi = float(step);
-        p = t * r;
-        p.z += uCameraOffset;
-        p = a * dot(a, p) * 2.0 - p;
-        for (int ni = 0; ni < 8; ni++) {
-            float n = float(ni) + 0.7;
-            p += 3.0 * sin(floor(p.zxy * n + iTime * uTimeScale * n + fi * 0.01)) / n;
-        }
-        v = abs(length(p) - uSphereRadius) + uDensityBias;
-        O += exp(sin(t + vec4(0.0, 2.0, 3.0, 0.0))) / v;
-        t += v * uDensityStep;
-    }
-
-    vec3 mapped = 1.0 - exp(-O.rgb / uToneMap);
-    O = vec4(mapped * uTint, 1.0);
-}
-`,
-    controls: [
-      { id: "time", label: "Time Scale", min: 0.0, max: 3.0, step: 0.01, defaultValue: 1.0, uniform: "uTimeScale", group: "float" },
-      { id: "camera", label: "Camera Z Offset", min: 0.5, max: 12.0, step: 0.05, defaultValue: 5.0, uniform: "uCameraOffset", group: "float" },
-      { id: "step", label: "Density Step", min: 0.01, max: 0.4, step: 0.005, defaultValue: 0.1, uniform: "uDensityStep", group: "float" },
-      { id: "bias", label: "Density Bias", min: 0.001, max: 0.2, step: 0.001, defaultValue: 0.01, uniform: "uDensityBias", group: "float" },
-      { id: "radius", label: "Sphere Radius", min: 0.5, max: 4.0, step: 0.01, defaultValue: 2.0, uniform: "uSphereRadius", group: "float" },
-      { id: "tonemap", label: "Tone Map", min: 20.0, max: 600.0, step: 1.0, defaultValue: 200.0, uniform: "uToneMap", group: "float" },
-      { id: "color-r", label: "Color R", min: 0.0, max: 2.0, step: 0.01, defaultValue: 1.0, uniform: "uTintR", group: "vec3", vector: "uTint", index: 0 },
-      { id: "color-g", label: "Color G", min: 0.0, max: 2.0, step: 0.01, defaultValue: 1.0, uniform: "uTintG", group: "vec3", vector: "uTint", index: 1 },
-      { id: "color-b", label: "Color B", min: 0.0, max: 2.0, step: 0.01, defaultValue: 1.0, uniform: "uTintB", group: "vec3", vector: "uTint", index: 2 },
-    ],
-  },
-  {
-    id: "70s-melt",
-    name: "70s Melt (third)",
-    source: String.raw`
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-float cosRange(float amt, float range, float minimum) {
-    return (((1.0 + cos(radians(amt))) * 0.5) * range) + minimum;
-}
-
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    const int maxZoom = 80;
-    float time = iTime * uTimeScale;
-    vec2 uv = fragCoord.xy / iResolution.xy;
-    vec2 p = (2.0 * fragCoord.xy - iResolution.xy) / max(iResolution.x, iResolution.y);
-    float ct = cosRange(time * 5.0, 3.0, 1.1);
-    float xBoost = cosRange(time * 0.2, 5.0, 5.0);
-    float yBoost = cosRange(time * 0.1, 10.0, 5.0);
-    float fScale = cosRange(time * 15.5, 1.25, 0.5);
-
-    for (int i = 1; i < maxZoom; i++) {
-        if (float(i) >= uZoom) {
-            break;
-        }
-        float fi = float(i);
-        vec2 newp = p;
-        newp.x += 0.25 / fi * sin(fi * p.y + time * cos(ct) * 0.5 / 20.0 + 0.005 * fi) * fScale + xBoost;
-        newp.y += 0.25 / fi * sin(fi * p.x + time * ct * 0.3 / 40.0 + 0.03 * float(i + 15)) * fScale + yBoost;
-        p = newp;
-    }
-
-    vec3 col = vec3(
-        0.5 * sin(3.0 * p.x) + 0.5,
-        0.5 * sin(3.0 * p.y) + 0.5,
-        sin(p.x + p.y)
-    );
-    col *= uBrightness;
-
-    float vigAmt = uVignette;
-    float vignette = (1.0 - vigAmt * (uv.y - 0.5) * (uv.y - 0.5))
-        * (1.0 - vigAmt * (uv.x - 0.5) * (uv.x - 0.5));
-    float extrusion = (col.x + col.y + col.z) / 4.0;
-    extrusion *= 1.5;
-    extrusion *= vignette;
-
-    fragColor = vec4(col, extrusion);
-}
-`,
-    controls: [
-      { id: "time", label: "Time Scale", min: 0.0, max: 3.0, step: 0.01, defaultValue: 1.25, uniform: "uTimeScale", group: "float" },
-      { id: "brightness", label: "Brightness", min: 0.2, max: 2.0, step: 0.01, defaultValue: 0.975, uniform: "uBrightness", group: "float" },
-      { id: "vignette", label: "Vignette", min: 0.0, max: 10.0, step: 0.1, defaultValue: 5.0, uniform: "uVignette", group: "float" },
-      { id: "zoom", label: "Zoom Iterations", min: 4.0, max: 79.0, step: 1.0, defaultValue: 40.0, uniform: "uZoom", group: "float" },
-    ],
-  },
-];
+  controls: [
+    { id: "time", uniform: "uTimeScale", defaultValue: 0.18, group: "float" },
+    { id: "ambient", uniform: "uAmbientIntensity", defaultValue: 0.34, group: "float" },
+    { id: "plane", uniform: "uPlaneWave", defaultValue: 0.11, group: "float" },
+    { id: "wave-freq", uniform: "uWaveFreq", defaultValue: 3.54, group: "float" },
+    { id: "plane-tilt", uniform: "uPlaneTilt", defaultValue: -0.225, group: "float" },
+    { id: "gooiness", uniform: "uGooiness", defaultValue: 0.5, group: "float" },
+    { id: "blob-size", uniform: "uBlobSize", defaultValue: 2.36, group: "float" },
+    { id: "blob-height", uniform: "uBlobHeight", defaultValue: 0.12, group: "float" },
+    { id: "fresnel", uniform: "uFresnel", defaultValue: 0.41, group: "float" },
+    { id: "camera-x", uniform: "uCameraPosX", defaultValue: 2.84, group: "vec3", vector: "uCameraPos", index: 0 },
+    { id: "camera-y", uniform: "uCameraPosY", defaultValue: 18.29, group: "vec3", vector: "uCameraPos", index: 1 },
+    { id: "camera-z", uniform: "uCameraPosZ", defaultValue: 16.49, group: "vec3", vector: "uCameraPos", index: 2 },
+    { id: "view-x", uniform: "uViewOffsetX", defaultValue: -0.24, group: "vec3", vector: "uViewOffset", index: 0 },
+    { id: "view-y", uniform: "uViewOffsetY", defaultValue: -2.04, group: "vec3", vector: "uViewOffset", index: 1 },
+    { id: "view-z", uniform: "uViewOffsetZ", defaultValue: -1.07, group: "vec3", vector: "uViewOffset", index: 2 },
+    { id: "r", uniform: "uBaseColorR", defaultValue: 0.51, group: "vec3", vector: "uBaseColor", index: 0 },
+    { id: "g", uniform: "uBaseColorG", defaultValue: 0, group: "vec3", vector: "uBaseColor", index: 1 },
+    { id: "b", uniform: "uBaseColorB", defaultValue: 0.98, group: "vec3", vector: "uBaseColor", index: 2 },
+  ],
+};
 
 const VERTEX_SOURCE = `
 attribute vec2 aPosition;
@@ -306,30 +205,20 @@ app.innerHTML = `
   <div class="layout">
     <aside class="panel">
       <h1>GLSL Playground</h1>
-      <p class="intro">Swap shaders, tweak uniforms, edit GLSL, and compile.</p>
-
-      <label class="field">
-        <span>Shader preset</span>
-        <select id="shader-select"></select>
-      </label>
 
       <label class="field">
         <span>Performance</span>
         <select id="performance-select"></select>
       </label>
 
-      <div id="param-controls" class="param-controls"></div>
-
-      <div class="button-row">
-        <button id="reset-params" type="button">Reset Params</button>
-        <button id="compile-shader" type="button">Compile Shader</button>
-        <button id="copy-settings" class="button-wide" type="button">Copy Settings JSON</button>
-      </div>
-
       <label class="field grow">
         <span>Fragment source</span>
-        <textarea id="shader-source" spellcheck="false"></textarea>
+        <textarea id="shader-source" spellcheck="false" readonly></textarea>
       </label>
+
+      <div class="button-row">
+        <button id="copy-shader" class="button-wide" type="button">Copy Shader Source</button>
+      </div>
 
       <p id="compile-status" class="status">Ready.</p>
     </aside>
@@ -350,13 +239,9 @@ app.innerHTML = `
   </div>
 `;
 
-const shaderSelect = document.querySelector("#shader-select");
 const performanceSelect = document.querySelector("#performance-select");
-const controlsRoot = document.querySelector("#param-controls");
 const sourceEditor = document.querySelector("#shader-source");
-const compileButton = document.querySelector("#compile-shader");
-const resetButton = document.querySelector("#reset-params");
-const copySettingsButton = document.querySelector("#copy-settings");
+const copyShaderButton = document.querySelector("#copy-shader");
 const statusNode = document.querySelector("#compile-status");
 const canvas = document.querySelector("#shader-canvas");
 const overlayVideo = document.querySelector("#shader-overlay-video");
@@ -387,15 +272,10 @@ gl.bufferData(
   gl.STATIC_DRAW,
 );
 
-const sourceState = new Map(SHADERS.map((shader) => [shader.id, shader.source]));
-const uniformState = new Map(
-  SHADERS.map((shader) => [
-    shader.id,
-    Object.fromEntries(shader.controls.map((control) => [control.uniform, control.defaultValue])),
-  ]),
+const uniformValues = Object.fromEntries(
+  SHADER.controls.map((control) => [control.uniform, control.defaultValue]),
 );
 
-let activeShaderId = SHADERS[0].id;
 let frame = 0;
 let startTime = performance.now();
 let pointerDown = false;
@@ -424,7 +304,7 @@ const PERFORMANCE_PRESETS = {
     resolutionScale: 1.0,
   },
 };
-let activePerformancePresetId = "high";
+let activePerformancePresetId = "balanced";
 let activePerformancePreset = PERFORMANCE_PRESETS[activePerformancePresetId];
 
 let programState = {
@@ -435,149 +315,6 @@ let programState = {
   vectorUniformLocations: new Map(),
 };
 
-const SETTINGS_STORAGE_KEY = "sip-shop-shader:settings:v1";
-const SETTINGS_STORAGE_VERSION = 1;
-
-function getDefaultUniformValues(shader) {
-  return Object.fromEntries(shader.controls.map((control) => [control.uniform, control.defaultValue]));
-}
-
-function createSerializableState() {
-  sourceState.set(activeShaderId, sourceEditor.value);
-  const serializedUniformState = Object.fromEntries(
-    SHADERS.map((shader) => [
-      shader.id,
-      { ...(uniformState.get(shader.id) ?? getDefaultUniformValues(shader)) },
-    ]),
-  );
-
-  return {
-    version: SETTINGS_STORAGE_VERSION,
-    activeShaderId,
-    activePerformancePresetId,
-    sourceState: Object.fromEntries(sourceState),
-    uniformState: serializedUniformState,
-  };
-}
-
-function persistState() {
-  try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(createSerializableState()));
-  } catch {
-    // Ignore storage quota and private mode failures.
-  }
-}
-
-function hydrateStateFromStorage() {
-  let rawState;
-  try {
-    rawState = localStorage.getItem(SETTINGS_STORAGE_KEY);
-  } catch {
-    return;
-  }
-
-  if (!rawState) {
-    return;
-  }
-
-  let parsedState;
-  try {
-    parsedState = JSON.parse(rawState);
-  } catch {
-    return;
-  }
-
-  if (!parsedState || typeof parsedState !== "object") {
-    return;
-  }
-
-  const shaderIds = new Set(SHADERS.map((shader) => shader.id));
-  if (typeof parsedState.activeShaderId === "string" && shaderIds.has(parsedState.activeShaderId)) {
-    activeShaderId = parsedState.activeShaderId;
-  }
-
-  if (
-    typeof parsedState.activePerformancePresetId === "string"
-    && parsedState.activePerformancePresetId in PERFORMANCE_PRESETS
-  ) {
-    activePerformancePresetId = parsedState.activePerformancePresetId;
-    activePerformancePreset = PERFORMANCE_PRESETS[activePerformancePresetId];
-  }
-
-  const savedSources = parsedState.sourceState;
-  if (savedSources && typeof savedSources === "object") {
-    SHADERS.forEach((shader) => {
-      const savedSource = savedSources[shader.id];
-      if (typeof savedSource === "string") {
-        sourceState.set(shader.id, savedSource);
-      }
-    });
-  }
-
-  const savedUniforms = parsedState.uniformState;
-  SHADERS.forEach((shader) => {
-    const mergedUniforms = getDefaultUniformValues(shader);
-    const shaderSavedUniforms = savedUniforms?.[shader.id];
-    if (shaderSavedUniforms && typeof shaderSavedUniforms === "object") {
-      shader.controls.forEach((control) => {
-        const savedValue = shaderSavedUniforms[control.uniform];
-        if (typeof savedValue === "number" && Number.isFinite(savedValue)) {
-          mergedUniforms[control.uniform] = savedValue;
-        }
-      });
-    }
-    uniformState.set(shader.id, mergedUniforms);
-  });
-}
-
-function copyTextToClipboard(text) {
-  if (navigator.clipboard?.writeText) {
-    return navigator.clipboard.writeText(text);
-  }
-
-  return new Promise((resolve, reject) => {
-    const helper = document.createElement("textarea");
-    helper.value = text;
-    helper.setAttribute("readonly", "true");
-    helper.style.position = "fixed";
-    helper.style.opacity = "0";
-    helper.style.pointerEvents = "none";
-    document.body.appendChild(helper);
-    helper.focus();
-    helper.select();
-
-    try {
-      const copied = document.execCommand("copy");
-      if (copied) {
-        resolve();
-      } else {
-        reject(new Error("Copy command failed"));
-      }
-    } catch (error) {
-      reject(error);
-    } finally {
-      document.body.removeChild(helper);
-    }
-  });
-}
-
-function destroyActiveProgram() {
-  if (programState.program) {
-    gl.deleteProgram(programState.program);
-  }
-  programState = {
-    program: null,
-    attributeLocation: -1,
-    baseUniforms: null,
-    controlUniformLocations: new Map(),
-    vectorUniformLocations: new Map(),
-  };
-}
-
-function getActiveShader() {
-  return SHADERS.find((shader) => shader.id === activeShaderId);
-}
-
 function setStatus(message, type = "idle") {
   statusNode.textContent = message;
   statusNode.classList.remove("error", "success");
@@ -586,13 +323,6 @@ function setStatus(message, type = "idle") {
   } else if (type === "success") {
     statusNode.classList.add("success");
   }
-}
-
-function formatValue(value) {
-  if (Math.abs(value) >= 100 || Number.isInteger(value)) {
-    return String(value);
-  }
-  return value.toFixed(3).replace(/\.?0+$/, "");
 }
 
 function escapeHtml(text) {
@@ -674,13 +404,13 @@ function createProgram(vertexSource, fragmentSource) {
   return program;
 }
 
-function getControlDeclarations(shader) {
-  const floatUniforms = shader.controls
+function getControlDeclarations() {
+  const floatUniforms = SHADER.controls
     .filter((control) => control.group === "float")
     .map((control) => `uniform float ${control.uniform};`);
 
   const vectorUniformSet = new Set(
-    shader.controls
+    SHADER.controls
       .filter((control) => control.group === "vec3" && control.vector)
       .map((control) => control.vector),
   );
@@ -689,14 +419,14 @@ function getControlDeclarations(shader) {
   return [...floatUniforms, ...vectorUniforms].join("\n");
 }
 
-function buildFragmentSource(shader, userSource) {
+function buildFragmentSource(userSource) {
   return `
 precision highp float;
 uniform vec3 iResolution;
 uniform float iTime;
 uniform vec4 iMouse;
 uniform float iFrame;
-${getControlDeclarations(shader)}
+${getControlDeclarations()}
 ${userSource}
 void main() {
   vec4 color = vec4(0.0);
@@ -715,10 +445,8 @@ function getReadableShaderError(error, source) {
   return `${error.message}\n\nSource preview:\n${escapeHtml(sample)}`;
 }
 
-function compileActiveShader() {
-  const shader = getActiveShader();
-  const userSource = sourceState.get(shader.id) ?? shader.source;
-  const fragmentSource = buildFragmentSource(shader, userSource);
+function compileShader() {
+  const fragmentSource = buildFragmentSource(SHADER.source);
 
   try {
     const program = createProgram(VERTEX_SOURCE, fragmentSource);
@@ -736,14 +464,14 @@ function compileActiveShader() {
     };
 
     const controlUniformLocations = new Map();
-    shader.controls.forEach((control) => {
+    SHADER.controls.forEach((control) => {
       if (control.group === "float") {
         controlUniformLocations.set(control.uniform, gl.getUniformLocation(program, control.uniform));
       }
     });
 
     const vectorUniformLocations = new Map();
-    shader.controls.forEach((control) => {
+    SHADER.controls.forEach((control) => {
       if (control.group === "vec3" && control.vector && !vectorUniformLocations.has(control.vector)) {
         vectorUniformLocations.set(control.vector, gl.getUniformLocation(program, control.vector));
       }
@@ -757,60 +485,11 @@ function compileActiveShader() {
       vectorUniformLocations,
     };
 
-    setStatus(`Compiled: ${shader.name}`, "success");
+    setStatus(`Compiled: ${SHADER.name}`, "success");
   } catch (error) {
     setStatus("Compile failed. Check shader log below.", "error");
     statusNode.innerHTML = `<strong>Compile failed</strong><br/><pre>${getReadableShaderError(error, fragmentSource)}</pre>`;
   }
-}
-
-function createControlRow(shader, control, values) {
-  const row = document.createElement("label");
-  row.className = "control-row";
-
-  const label = document.createElement("span");
-  label.className = "control-label";
-  label.textContent = control.label;
-
-  const valueNode = document.createElement("span");
-  valueNode.className = "control-value";
-  valueNode.textContent = formatValue(values[control.uniform]);
-
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.min = String(control.min);
-  slider.max = String(control.max);
-  slider.step = String(control.step);
-  slider.value = String(values[control.uniform]);
-
-  slider.addEventListener("input", () => {
-    const nextValue = Number(slider.value);
-    values[control.uniform] = nextValue;
-    valueNode.textContent = formatValue(nextValue);
-    persistState();
-  });
-
-  row.append(label, valueNode, slider);
-  return row;
-}
-
-function renderControls() {
-  const shader = getActiveShader();
-  const values = uniformState.get(shader.id);
-  controlsRoot.innerHTML = "";
-  shader.controls.forEach((control) => {
-    controlsRoot.appendChild(createControlRow(shader, control, values));
-  });
-}
-
-function resetActiveParams() {
-  const shader = getActiveShader();
-  const values = uniformState.get(shader.id);
-  shader.controls.forEach((control) => {
-    values[control.uniform] = control.defaultValue;
-  });
-  renderControls();
-  persistState();
 }
 
 function applyPerformancePreset(presetId) {
@@ -821,27 +500,23 @@ function applyPerformancePreset(presetId) {
   activePerformancePreset = PERFORMANCE_PRESETS[presetId];
   lastRenderAt = 0;
   resizeCanvas();
-  persistState();
 }
 
 function applyUniforms() {
-  const shader = getActiveShader();
-  const values = uniformState.get(shader.id);
-
-  shader.controls.forEach((control) => {
+  SHADER.controls.forEach((control) => {
     if (control.group === "float") {
       const location = programState.controlUniformLocations.get(control.uniform);
       if (location) {
-        gl.uniform1f(location, values[control.uniform]);
+        gl.uniform1f(location, uniformValues[control.uniform]);
       }
     }
   });
 
   const vec3Buckets = new Map();
-  shader.controls.forEach((control) => {
+  SHADER.controls.forEach((control) => {
     if (control.group === "vec3" && control.vector !== undefined && control.index !== undefined) {
       const current = vec3Buckets.get(control.vector) ?? [0, 0, 0];
-      current[control.index] = values[control.uniform];
+      current[control.index] = uniformValues[control.uniform];
       vec3Buckets.set(control.vector, current);
     }
   });
@@ -905,12 +580,36 @@ function render(now) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-SHADERS.forEach((shader) => {
-  const option = document.createElement("option");
-  option.value = shader.id;
-  option.textContent = shader.name;
-  shaderSelect.appendChild(option);
-});
+function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  return new Promise((resolve, reject) => {
+    const helper = document.createElement("textarea");
+    helper.value = text;
+    helper.setAttribute("readonly", "true");
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
+    helper.style.pointerEvents = "none";
+    document.body.appendChild(helper);
+    helper.focus();
+    helper.select();
+
+    try {
+      const copied = document.execCommand("copy");
+      if (copied) {
+        resolve();
+      } else {
+        reject(new Error("Copy command failed"));
+      }
+    } catch (error) {
+      reject(error);
+    } finally {
+      document.body.removeChild(helper);
+    }
+  });
+}
 
 Object.entries(PERFORMANCE_PRESETS).forEach(([id, preset]) => {
   const option = document.createElement("option");
@@ -919,58 +618,21 @@ Object.entries(PERFORMANCE_PRESETS).forEach(([id, preset]) => {
   performanceSelect.appendChild(option);
 });
 
-hydrateStateFromStorage();
-shaderSelect.value = activeShaderId;
 performanceSelect.value = activePerformancePresetId;
-sourceEditor.value = sourceState.get(activeShaderId) ?? "";
-renderControls();
-compileActiveShader();
+sourceEditor.value = SHADER.source.trim();
+compileShader();
 requestAnimationFrame(render);
-persistState();
-
-shaderSelect.addEventListener("change", () => {
-  sourceState.set(activeShaderId, sourceEditor.value);
-  destroyActiveProgram();
-  activeShaderId = shaderSelect.value;
-  sourceEditor.value = sourceState.get(activeShaderId) ?? "";
-  frame = 0;
-  startTime = performance.now();
-  renderControls();
-  compileActiveShader();
-  persistState();
-});
 
 performanceSelect.addEventListener("change", () => {
   applyPerformancePreset(performanceSelect.value);
 });
 
-sourceEditor.addEventListener("input", () => {
-  sourceState.set(activeShaderId, sourceEditor.value);
-  persistState();
-});
-
-sourceEditor.addEventListener("keydown", (event) => {
-  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-    event.preventDefault();
-    compileActiveShader();
-  }
-});
-
-compileButton.addEventListener("click", () => {
-  compileActiveShader();
-});
-
-resetButton.addEventListener("click", () => {
-  resetActiveParams();
-});
-
-copySettingsButton.addEventListener("click", async () => {
-  const settingsJson = JSON.stringify(createSerializableState(), null, 2);
+copyShaderButton.addEventListener("click", async () => {
   try {
-    await copyTextToClipboard(settingsJson);
-    setStatus("Settings JSON copied to clipboard.", "success");
+    await copyTextToClipboard(SHADER.source.trim());
+    setStatus("Shader source copied to clipboard.", "success");
   } catch {
-    window.prompt("Clipboard blocked. Copy settings JSON:", settingsJson);
-    setStatus("Clipboard blocked. Opened JSON in prompt.", "error");
+    window.prompt("Clipboard blocked. Copy shader source:", SHADER.source.trim());
+    setStatus("Clipboard blocked. Opened source in prompt.", "error");
   }
 });
